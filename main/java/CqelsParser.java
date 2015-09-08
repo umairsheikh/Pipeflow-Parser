@@ -10,6 +10,9 @@ import com.hp.hpl.jena.sparql.core.Quad;
 
 import java.util.regex.*;
 
+
+//A main query algebric operator by ARQ Jena to be serialized into 
+//our implementation and linked to other operators as instance to this class
 class QuadPattern
 {
 	public String Subject;
@@ -27,14 +30,17 @@ class QuadPattern
 
 }
 
+//Pipeflow Input 
 class InputOp
 {
+	//Keeps the link to the tripple to which 
+	//Input quad points to
 	QuadPattern quad;
 	String inputOperatorText;
 	String InputOperatorVariableName;
 }
 
-
+//Pipeflow filterOperator
 class filterOp
 {
 	InputOp inOp;	
@@ -42,15 +48,17 @@ class filterOp
 	String filterByValue;
 	String filterCommandText;
 	String filterVariableName;
+	
+	//Filter can be applied to multiple Quads of different tripple patterns
 	ArrayList<QuadPattern> QuadList;
 
 	filterOp()
 	{
 		QuadList = new ArrayList<QuadPattern>();
 	}
-
 }
 
+//SparqlJoin in Pipeflow
 class Sparql_Join
 {
 	String SparqlJoinVariableName;
@@ -62,9 +70,10 @@ class Sparql_Join
 	 
 }
 
+//PipeFlow StreamWriter
 class StreamWriter
 {
-	String streamWriterOperatorText = "$out := stream_writer($input) using (stream = \"std::cout\");";
+	String streamWriterOperatorText = "$FinalOutput := stream_writer($input) using (stream = \"std::cout\");";
 	String OutputVariable;
 	String InputVariable;
 	
@@ -73,10 +82,12 @@ class StreamWriter
 		this.InputVariable = InputVariable;
 		this.OutputVariable = OutputVariable;
 		this.streamWriterOperatorText = this.streamWriterOperatorText.replace("$input",this.InputVariable);
-		this.streamWriterOperatorText = this.streamWriterOperatorText.replace("$out",this.OutputVariable);
+		if(!OutputVariable.isEmpty())
+		{
+			this.streamWriterOperatorText = this.streamWriterOperatorText.replace("$FinalOutput",this.OutputVariable);
+		}
 		return this.streamWriterOperatorText;
 	}
-
 }
 
 class PipeFlowProjectOperator 
@@ -404,16 +415,23 @@ public class CqelsParser
 
 	public CqelsParser()
 	{
+		//List of Input Operators
 		this.InputOperatorList = new ArrayList<InputOp>();
+		//List of Filter Operators 
 		this.FilterOperatorList = new ArrayList<filterOp>();
+		//List of Spqrql Join Operators
 		this.sparqlJoinList = new ArrayList<Sparql_Join>();
-
+		//List of Quads with InputGraph as Input to stream link of the tripple
 		this.QuadPatterns = new ArrayList<QuadPattern>();
+		//EndPointConfig file for pipeflow
 		this.EndPointConfigFile = null;
+		//Flag for if SparqlJoin is needed
 		this.isSparqlJoinExist = false;
+		//List of Static query part as Tripple Set
 		this.staticSparqlQuery = new ArrayList<String>();
-		this.SparqlJoinSelectParameter = null;
+		//Final Sparql to Pipeflow query
 		this.PipeFlowQuery = null;
+		//Sparql Query to be transformed to pipeflow
 		this.CQELSQuery = null;
 
 	}
@@ -797,6 +815,27 @@ public class CqelsParser
 
 
 	}
+	private void setStreamWriter()
+	{
+		StreamWriter sWriter = new StreamWriter();
+		if(this.isSparqlJoinExist)
+		{
+			this.PipeFlowQuery = this.PipeFlowQuery + sWriter.GetStreamWriter("", this.sparqlJoinList.get(0).SparqlJoinOutputVariable);
+			
+		}
+		else if(!this.joinsList.isEmpty())
+		{
+			this.PipeFlowQuery = this.PipeFlowQuery + sWriter.GetStreamWriter("", this.joinsList.get(this.joinsList.size()-1).JoinVariableName);
+		}
+		else if(!this.FilterOperatorList.isEmpty())
+		{
+			this.PipeFlowQuery = this.PipeFlowQuery + sWriter.GetStreamWriter("", this.FilterOperatorList.get(this.FilterOperatorList.size()-1).filterVariableName);
+		}
+		
+		
+	}
+	
+	
 	private void initialize_parser()
 	{
 		fetchQuadPatterns();
@@ -804,6 +843,8 @@ public class CqelsParser
 		makeFilters();
 		extractJoins();
 		extract_Sparql_Join();
+		setStreamWriter();
+		
 		
 	}
 	private void extract_Sparql_Join()

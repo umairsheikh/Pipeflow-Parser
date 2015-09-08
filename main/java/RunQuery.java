@@ -23,8 +23,6 @@ import java.util.regex.*;
 
 
 
-	
-
 
 public class RunQuery {
 
@@ -33,21 +31,8 @@ public class RunQuery {
 	public static void main(String[] args) 
     {
     	
-            
-            //context.loadDefaultDataset(HOME);
-            //context.loadDataset("graphUri", "dataUri");
-            /*
-                    PREFIX lv: <http://deri.org/floorplan/>
-                    SELECT ?loc  
-                    WHERE {
-                    STREAM <http://deri.org/streams/rfid> [TRIPLES 100] 
-                    {?person lv:detectedAt ?loc} 
-             */
-            
-          
             String floorPlanFilepath = "/Users/fuadshah/Desktop/GS/cqels_data/floorplan.rdf";
-         
-           String query2=  "PREFIX lv: <"+floorPlanFilepath+"> "+
+            String query2=  "PREFIX lv: <"+floorPlanFilepath+"> "+
             			"SELECT  ?person1 ?person2 "+ 
 						"FROM NAMED <"+floorPlanFilepath+"> "+
 						"WHERE { "+
@@ -57,18 +42,14 @@ public class RunQuery {
 						"{?person1 lv:detectedAt ?loc1}  "+ 
 						"STREAM <http://deri.org/streams/rfid> [RANGE 3s] {?person2 lv:detectedAt ?loc2} } ";
             
-          
-
-            		
+ 
             String queryString ="PREFIX lv: <http://deri.org/floorplan/> \n SELECT ?loc WHERE {"+
             					" STREAM <http://deri.org/streams/rfid> [TRIPLES 1] \n"+
             					" {?person lv:detectedAt ?loc} }";
 
-
             String queryString2 ="PREFIX lv: <http://deri.org/floorplan/> \n SELECT ?person WHERE {"+
 		                         "STREAM <http://deri.org/streams/rfid> [TRIPLES 1] \n"+
 		                         "{?person lv:detectedAt ?loc} }";
-            
             
             String query1Ls =   "PREFIX sib:  <http://www.ins.cwi.nl/sib/vocabulary/> "+
 								"PREFIX foaf: <http://xmlns.com/foaf/0.1/> "+
@@ -79,7 +60,6 @@ public class RunQuery {
 								  "{<http://www.ins.cwi.nl/sib/user/u984> ?p ?o.} "+
 								" }";
          
-            
             String query2Ls =   "PREFIX sib:  <http://www.ins.cwi.nl/sib/vocabulary/> "+
 			            		"PREFIX foaf: <http://xmlns.com/foaf/0.1/> "+
 			            		"PREFIX sioc: <http://rdfs.org/sioc/ns#> "+
@@ -90,8 +70,6 @@ public class RunQuery {
 			            		" ?user sioc:account_of <http://www.ins.cwi.nl/sib/person/p984>. "+
 			            		" }";
             
-            
-            
             String query3Ls= "PREFIX foaf: <http://xmlns.com/foaf/0.1/> "+
 					  "PREFIX sioc: <http://rdfs.org/sioc/ns#> "+
 					  "select ?friend ?post "+
@@ -101,7 +79,6 @@ public class RunQuery {
 					  "} "+
 					  "?user foaf:knows ?friend. "+
 					  "?user sioc:account_of <http://www.ins.cwi.nl/sib/person/p984>. }";
-            
             
             
             String query4Ls =   " PREFIX foaf: <http://xmlns.com/foaf/0.1/> "+
@@ -144,13 +121,13 @@ public class RunQuery {
             System.out.println("Startin  Query- From "+ HOME);
     	    final ExecContext context=new ExecContext(HOME, false,true);
             TextStream stream = new TextStream(context, "http://deri.org/streams/rfid", HOME+"/stream/rfid_1000.stream");
-            ContinuousSelect selQuery=context.registerSelect(query3Ls); 
+            ContinuousSelect selQuery=context.registerSelect(query4Ls); 
            
             CqelsParser cqelsParser = new CqelsParser();
             String inputFile = "rdfPostStream.csv";
     		String endPointConfigFile = "sibdataset.rdf";
            
-            String pipeflowQuery =  cqelsParser.parse(query3Ls, context, selQuery, inputFile, endPointConfigFile);
+            String pipeflowQuery =  cqelsParser.parse(query4Ls, context, selQuery, inputFile, endPointConfigFile);
             System.out.println("::::::::::---pipeflow query---:::::: \n"+pipeflowQuery);
              
     }
