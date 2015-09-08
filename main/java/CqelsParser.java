@@ -804,6 +804,7 @@ public class CqelsParser
 		makeFilters();
 		extractJoins();
 		extract_Sparql_Join();
+		
 	}
 	private void extract_Sparql_Join()
 	{
@@ -816,6 +817,14 @@ public class CqelsParser
 			for(PipeflowJoinOperator x: this.joinsList)
 			{
 				InputVariable = x.JoinVariableName;
+			}
+			if (InputVariable.isEmpty())
+			{
+				for(filterOp fOp :FilterOperatorList)
+				{
+					InputVariable = fOp.filterVariableName;
+					
+				}
 			}
 			
 			this.PipeFlowQuery = this.PipeFlowQuery+  mapToPipeFlow(isSparqlJoinExist,  staticQueryPart, sparqlprojectionvariable,InputVariable);
