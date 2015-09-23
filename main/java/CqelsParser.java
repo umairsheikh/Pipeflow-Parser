@@ -109,14 +109,11 @@ class PipeflowJoinOperator extends PipeFlowProjectOperator
 	public String PipeflowJoinVariable;
 	public String JoinVariableName;
 
-
-
 	public PipeflowJoinOperator()
 	{
 		J1= null;
 		J2=null;
 	}
-
 	private String HashJoinSyntax = "$out := relation_hash_join($J1, $J2) "
 			+ " on J1.x, J2.x, by"
 			+ " J1.x == J2.x ";
@@ -382,12 +379,12 @@ class PipeflowJoinOperator extends PipeFlowProjectOperator
 	public void showJoinOperators()
 	{
 		if(J1.Subject.trim() == J2.Object.trim())
-			System.out.println(" s=o");
+			//System.out.println(" s=o");
 
 		//if(J1.Subject.trim() == J2.Object.trim())
 		{
-			System.out.println(" - "+": "+J1.Subject+": "+J1.Predicate+": "+J1.Object);	
-			System.out.println(" - "+J2.Subject+": "+J2.Predicate+": "+J2.Object);
+			//System.out.println(" - "+": "+J1.Subject+": "+J1.Predicate+": "+J1.Object);	
+			//System.out.println(" - "+J2.Subject+": "+J2.Predicate+": "+J2.Object);
 		}
 	}
 
@@ -412,6 +409,9 @@ public class CqelsParser
 	private String CQELSQuery;
 	private ExecContext context;
 	private ContinuousSelect selQuery;
+	
+	private String SPARQLQUERYFILE;
+	private String PIPEFLOWQUERYFILE;
 
 	public CqelsParser()
 	{
@@ -433,6 +433,9 @@ public class CqelsParser
 		this.PipeFlowQuery = null;
 		//Sparql Query to be transformed to pipeflow
 		this.CQELSQuery = null;
+		
+		this.SPARQLQUERYFILE = "";
+		this.PIPEFLOWQUERYFILE = "";
 
 	}
 	public String GetLogicPlan()
@@ -587,7 +590,7 @@ public class CqelsParser
 					this.PipeFlowQuery = this.PipeFlowQuery + fOp.filterCommandText;
 					fOp.QuadList.add(Q);
 					this.FilterOperatorList.add(fOp);
-					System.out.println(fOp.filterCommandText);
+					///System.out.println(fOp.filterCommandText);
 				}	
 				else
 				{
@@ -619,7 +622,7 @@ public class CqelsParser
 					this.PipeFlowQuery = this.PipeFlowQuery + fOp.filterCommandText;
 					fOp.QuadList.add(Q);
 					this.FilterOperatorList.add(fOp);
-					System.out.println(fOp.filterCommandText);
+					//System.out.println(fOp.filterCommandText);
 				}
 				else
 				{
@@ -893,15 +896,13 @@ public class CqelsParser
 		//System.out.println("projectionVar"+triple.substring(beginIndex, endIndex-1));
 		return projectionVar;
 	}
-	public String  parse(String cqelsQuery, ExecContext execContext , ContinuousSelect selectQuery, String InputFile, String endPointConfigFile) 
+	public String  parse(ExecContext execContext , ContinuousSelect selectQuery, String InputFile, String endPointConfigFile) 
 	{    	
 		this.selQuery = selectQuery;
 		this.context = execContext;
 		this.EndPointConfigFile = endPointConfigFile;
 		this.initialize_parser();
-		
-		System.out.println(GetLogicPlan());
-		
+		//System.out.println(GetLogicPlan());
 		return this.PipeFlowQuery;           
 	}
 }

@@ -19,6 +19,7 @@ import com.hp.hpl.jena.sparql.core.Var;
 import com.hp.hpl.jena.sparql.syntax.ElementGroup;
 import com.sun.tools.javac.util.List;
 
+import java.io.*;
 import java.util.regex.*;
 
 
@@ -27,108 +28,69 @@ import java.util.regex.*;
 public class RunQuery {
 
 	private static final String HOME = "/Users/fuadshah/Desktop/GS/cqels_data";
+ 	private static boolean generateLogicalPlan= false;
+ 	private static  String QueryInputFilePath="path";
+ 	private static String QueryOutputFilePath;
  	
-	public static void main(String[] args) 
+ 	
+	public static void main(String[] args) throws IOException 
     {
-    	
-            String floorPlanFilepath = "/Users/fuadshah/Desktop/GS/cqels_data/floorplan.rdf";
-            String query2=  "PREFIX lv: <"+floorPlanFilepath+"> "+
-            			"SELECT  ?person1 ?person2 "+ 
-						"FROM NAMED <"+floorPlanFilepath+"> "+
-						"WHERE { "+
-						"GRAPH <"+floorPlanFilepath+"> "+ 
-						"{?loc1 lv:connected ?loc2} "+
-						"STREAM <http://deri.org/streams/rfid> [NOW] "+ 
-						"{?person1 lv:detectedAt ?loc1}  "+ 
-						"STREAM <http://deri.org/streams/rfid> [RANGE 3s] {?person2 lv:detectedAt ?loc2} } ";
-            
- 
-            String queryString ="PREFIX lv: <http://deri.org/floorplan/> \n SELECT ?loc WHERE {"+
-            					" STREAM <http://deri.org/streams/rfid> [TRIPLES 1] \n"+
-            					" {?person lv:detectedAt ?loc} }";
-
-            String queryString2 ="PREFIX lv: <http://deri.org/floorplan/> \n SELECT ?person WHERE {"+
-		                         "STREAM <http://deri.org/streams/rfid> [TRIPLES 1] \n"+
-		                         "{?person lv:detectedAt ?loc} }";
-            
-            String query1Ls =   "PREFIX sib:  <http://www.ins.cwi.nl/sib/vocabulary/> "+
-								"PREFIX foaf: <http://xmlns.com/foaf/0.1/> "+
-								"PREFIX sioc: <http://rdfs.org/sioc/ns#> "+
-								"select ?p ?o "+
-								"where{ "+
-								 " STREAM <http://deri.org/poststream> [RANGE 1s] "+
-								  "{<http://www.ins.cwi.nl/sib/user/u984> ?p ?o.} "+
-								" }";
-         
-            String query2Ls =   "PREFIX sib:  <http://www.ins.cwi.nl/sib/vocabulary/> "+
-			            		"PREFIX foaf: <http://xmlns.com/foaf/0.1/> "+
-			            		"PREFIX sioc: <http://rdfs.org/sioc/ns#> "+
-			            		"select ?post "+
-			            		"where{ "+
-			            		 " STREAM <http://deri.org/poststream> [RANGE 1s] "+
-			            		" {?user sioc:creator_of ?post.} "+
-			            		" ?user sioc:account_of <http://www.ins.cwi.nl/sib/person/p984>. "+
-			            		" }";
-            
-            String query3Ls= "PREFIX foaf: <http://xmlns.com/foaf/0.1/> "+
-					  "PREFIX sioc: <http://rdfs.org/sioc/ns#> "+
-					  "select ?friend ?post "+
-					  "where{ "+
-					  " STREAM <http://deri.org/poststream> [RANGE 5s]{ "+
-					  "?friend sioc:creator_of ?post. "+
-					  "} "+
-					  "?user foaf:knows ?friend. "+
-					  "?user sioc:account_of <http://www.ins.cwi.nl/sib/person/p984>. }";
-            
-            
-            String query4Ls =   " PREFIX foaf: <http://xmlns.com/foaf/0.1/> "+
-								" PREFIX sib:  <http://www.ins.cwi.nl/sib/vocabulary/> "+
-								" PREFIX sioc: <http://rdfs.org/sioc/ns#>"+
-								" select ?post1 ?post2 ?tag "+
-								" where{ "+ 
-								"  STREAM <http://deri.org/poststream> [RANGE 15s] "+
-								"  {?post1 sib:hashtag ?tag. ?user sioc:creator_of ?post1.} "+
-								"  STREAM <http://deri.org/poststream> [RANGE 15s] "+
-								"  {?post2 sib:hashtag ?tag. ?user sioc:creator_of ?post2.}"+
-								"  FILTER(?post1 !=?post2) "+
-								" }";
-            
-			String query5Ls = " PREFIX sib:  <http://www.ins.cwi.nl/sib/vocabulary/> "+
-							  " PREFIX foaf: <http://xmlns.com/foaf/0.1/> "+
-							  " select ?friend1 ?friend2 ?photo "+
-							  " where{ " + 
-							 " STREAM <http://deri.org/likedphotostream> [RANGE 100ms] "+
-							 " {?friend2 sib:like ?photo. } "+
-							 " STREAM <http://deri.org/photostream> [RANGE 1m ] "+
-							 " {?photo sib:usertag ?friend1.} "+
-							 " ?friend1 foaf:knows ?friend2. "+
-							" }	";
-            
-
-			String query6Ls = 	" PREFIX sib:  <http://www.ins.cwi.nl/sib/vocabulary/> "+
-					" PREFIX foaf: <http://xmlns.com/foaf/0.1/> "+
-					" PREFIX sioc: <http://rdfs.org/sioc/ns#> "+
-					" select ?user ?friend ?post ?channel "+
-					" where{ "+
-					"  STREAM <http://deri.org/poststream> [RANGE 1m] "+
-					"  { ?channel sioc:container_of ?post. } "+
-					"  STREAM <http://deri.org/likedpoststream> [RANGE 100ms] "+
-					"  {?friend sib:like ?post.} "+
-					"  ?user foaf:knows ?friend. "+
-					"  ?user sioc:subscriber_of ?channel."+
-					" } ";
-           
-            System.out.println("Startin  Query- From "+ HOME);
-    	    final ExecContext context=new ExecContext(HOME, false,true);
-            TextStream stream = new TextStream(context, "http://deri.org/streams/rfid", HOME+"/stream/rfid_1000.stream");
-            ContinuousSelect selQuery=context.registerSelect(query4Ls); 
-           
-            CqelsParser cqelsParser = new CqelsParser();
-            String inputFile = "rdfPostStream.csv";
-    		String endPointConfigFile = "sibdataset.rdf";
-           
-            String pipeflowQuery =  cqelsParser.parse(query4Ls, context, selQuery, inputFile, endPointConfigFile);
-            System.out.println("::::::::::---pipeflow query---:::::: \n"+pipeflowQuery);
+		 String floorPlanFilepath = "/Users/fuadshah/Desktop/GS/cqels_data/floorplan.rdf";
+		 String line;
+		 
+		if(args.length == 0)
+		{
+			System.out.println("No parameters found");
+			
+		}
+		else if(args.length ==1 )
+		{
+			if(args[0].contains("-h"))
+			   System.out.println(" RunQuery.jar <Options> <InputFile> <OutputFile>");
+			   System.out.println(" Options ");
+			   System.out.println("        -h  Help runing the command ");
+			   System.out.println("        -L  Output logical plan with pipeflow query ");
+			   
+		}
+		else if(args.length >1)
+		{
+			if(args[0].equals("-L"))
+			{
+				try 
+				{
+				    FileReader fileReader =  new FileReader(args[1]);
+		            BufferedReader bufferedReader = new BufferedReader(fileReader);
+		            String QueryText = "";
+		            while((line = bufferedReader.readLine()) != null) 
+		            {
+		                
+		                QueryText = QueryText + line +"\n";
+		            }   
+		            System.out.println(QueryText);
+		            bufferedReader.close();     
+		            
+		            System.out.println("Startin  Query- From "+ HOME);
+		            final ExecContext context=new ExecContext(HOME, false,true);
+		            TextStream stream = new TextStream(context, "http://deri.org/streams/rfid", HOME+"/stream/rfid_1000.stream");
+		            ContinuousSelect selQuery=context.registerSelect(QueryText); 
+		           
+		            CqelsParser cqelsParser = new CqelsParser();
+		            String rdfInputFile = "rdfPostStream.csv";
+		    		String endPointConfigFile = "sibdataset.rdf";
+		    		
+		            String pipeflowQuery =  cqelsParser.parse(context, selQuery, rdfInputFile, endPointConfigFile);
+		            System.out.println("::::::::::---pipeflow query---:::::: \n"+pipeflowQuery);
+		        }
+				catch(FileNotFoundException ex )
+				{
+		            System.out.println(
+		                "Unable to open file '" + 
+		                		QueryInputFilePath + "'");                
+		        }
+			}
+			
+		}
+		System.exit(0);
              
     }
 }
